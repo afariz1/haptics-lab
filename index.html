@@ -2,84 +2,645 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14131f">
 <title>Haptics Lab</title>
+<meta name="description" content="Try haptic patterns, sounds and their combinations on your phone, compose your own and export code for Android, iOS, React Native and the web.">
 <style>
-  :root { --ink:#1c1b33; --cyan:#00a9e0; --red:#e5202e; --g1:#f1f3f6; --g3:#666e7a; --bg:#fff; }
-  @media (prefers-color-scheme: dark) { :root { --ink:#eef0f5; --g1:#262638; --g3:#a3a9b5; --bg:#14131f; } }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--ink);
-         min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:20px 16px 32px; transition: background .04s; }
-  body.flash { background: var(--cyan); }
-  h1 { font-size:22px; margin:4px 0 2px; } p.sub { margin:0 0 18px; color:var(--g3); font-size:14px; text-align:center; }
-  .row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:10px; }
-  .chip { border:0; border-radius:999px; padding:10px 16px; font-size:16px; font-weight:700; background:var(--g1); color:var(--ink); }
-  .chip.on { background:var(--cyan); color:#fff; }
-  #tap { margin:22px 0; width:min(62vw,260px); aspect-ratio:1; border-radius:50%; border:0; background:var(--red); color:#fff;
-         font-size:28px; font-weight:800; touch-action:manipulation; }
-  #tap:active { transform: scale(.97); }
-  .ch label { display:flex; gap:6px; align-items:center; font-size:15px; background:var(--g1); padding:8px 12px; border-radius:10px; }
-  #log { margin-top:14px; font-size:14px; color:var(--g3); text-align:center; min-height:40px; max-width:420px; }
-  #reveal { display:none; } .blind #reveal { display:inline-block; }
-  .note { margin-top:auto; font-size:12px; color:var(--g3); max-width:440px; text-align:center; }
+:root{
+  --bg:#f4f5f8; --card:#ffffff; --ink:#1c1b33; --muted:#6b7280; --line:#e3e6ec; --soft:#eef0f4;
+  --touch:#e5202e; --touch-soft:#fde4e6; --sound:#00a9e0; --sound-soft:#dcf3fb; --ok:#1f9d63; --warn:#d98e04;
+  --code-bg:#1c1b33; --code-fg:#e8ecf2; --radius:18px; --shadow:0 1px 2px rgba(20,20,40,.06),0 6px 24px rgba(20,20,40,.06);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f0f19; --card:#191927; --ink:#eef0f6; --muted:#9aa1ae; --line:#2a2a3c; --soft:#222234;
+  --touch-soft:#3a1a20; --sound-soft:#0f3140; --code-bg:#0b0b14; --shadow:none;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+button{font:inherit;color:inherit}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px}
+
+/* header */
+header{padding:22px 0 8px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:12px;background:var(--touch);position:relative;flex:none}
+.logo:before,.logo:after{content:"";position:absolute;inset:11px;border:2px solid #fff;border-radius:50%}
+.logo:after{inset:4px;opacity:.45}
+h1{font-size:24px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px;margin:2px 0 0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+.tog{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:14px;cursor:pointer;user-select:none}
+.tog input{display:none}
+.tog .dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.tog.on .dot{background:var(--ok)}
+.tog.hap.on .dot{background:var(--touch)} .tog.snd.on .dot{background:var(--sound)}
+.tog select,.tog input[type=range]{display:inline-block;background:transparent;border:0;color:inherit;font:inherit}
+.tog input[type=range]{width:80px;accent-color:var(--sound)}
+.notice{margin:10px 0 0;padding:10px 14px;border-radius:12px;background:var(--touch-soft);font-size:14px;display:none}
+.notice.show{display:block}
+
+/* tabs */
+nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin:8px -16px 0;padding:8px 16px;border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:0;background:transparent;padding:8px 13px;border-radius:999px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+.tab.on{background:var(--ink);color:var(--bg)}
+
+section{display:none;padding:18px 0}
+section.on{display:block}
+h2{font-size:20px;margin:0 0 4px}
+.lead{color:var(--muted);margin:0 0 16px;font-size:15px;max-width:680px}
+.grid{display:grid;gap:14px}
+@media(min-width:760px){.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.card h3{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.tag{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+
+/* pads & buttons */
+.pads{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+.pad{position:relative;border:1px solid var(--line);background:var(--soft);border-radius:14px;padding:12px 12px 10px;text-align:left;cursor:pointer;min-height:84px;overflow:hidden;touch-action:manipulation;transition:transform .08s}
+.pad:active,.pad.hit{transform:scale(.97)}
+.pad b{display:block;font-size:14px}
+.pad small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.pad .mini{display:block;width:100%;height:10px;margin-top:10px}
+.pad.sel{outline:2px solid var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:14px;font-weight:600;cursor:pointer}
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;background:var(--ink);color:var(--bg)}
+.btn.ghost{background:var(--soft);color:var(--ink)}
+.btn.red{background:var(--touch);color:#fff}
+.big{width:min(64vw,230px);aspect-ratio:1;border-radius:50%;border:0;background:var(--touch);color:#fff;font-size:24px;font-weight:800;display:block;margin:16px auto;cursor:pointer;touch-action:manipulation;box-shadow:0 10px 30px rgba(229,32,46,.35)}
+.big:active{transform:scale(.97)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+input[type=range]{accent-color:var(--touch);width:100%}
+input[type=number],select{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:7px 9px;color:var(--ink);font:inherit;font-size:14px}
+.val{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
+
+/* code */
+.codes{display:flex;gap:6px;margin:12px 0 6px;flex-wrap:wrap}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:12px;padding:30px 14px 12px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-x:auto;cursor:copy;position:relative;white-space:pre}
+pre.code:after{content:"tap to copy";position:absolute;right:10px;top:8px;font:11px system-ui;color:#8c95a6}
+pre.code.copied:after{content:"copied ✓";color:#7ee2b0}
+
+/* gesture widgets */
+.track{position:relative;height:56px;border-radius:14px;background:var(--soft);touch-action:none;cursor:grab;overflow:hidden}
+.track .fill{position:absolute;inset:0 auto 0 0;background:var(--sound-soft)}
+.track .knob{position:absolute;top:8px;width:40px;height:40px;border-radius:50%;background:var(--ink);transform:translateX(-50%)}
+.track .det{position:absolute;top:22px;width:2px;height:12px;background:var(--line);transform:translateX(-50%)}
+.ptr{height:220px;border-radius:14px;background:var(--soft);position:relative;overflow:hidden;touch-action:none}
+.ptr .sheet{position:absolute;inset:0;background:var(--card);border-top:1px solid var(--line);display:flex;align-items:flex-start;justify-content:center;padding-top:14px;color:var(--muted);font-size:14px}
+.ptr .ind{position:absolute;left:50%;top:10px;transform:translateX(-50%);font-size:13px;font-weight:700}
+.swipe{position:relative;height:72px;border-radius:14px;background:var(--touch);overflow:hidden;touch-action:pan-y}
+.swipe .lbl{position:absolute;right:18px;top:0;bottom:0;display:flex;align-items:center;color:#fff;font-weight:800}
+.swipe .item{position:absolute;inset:0;background:var(--card);border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;padding:0 16px;gap:12px;touch-action:pan-y}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--sound-soft)}
+.texture{height:220px;border-radius:14px;touch-action:none;position:relative;overflow:hidden}
+.hold{width:100%;height:84px;border-radius:14px;border:0;background:var(--soft);font-weight:800;position:relative;overflow:hidden;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none}
+.hold .prog{position:absolute;inset:0 auto 0 0;width:0;background:var(--touch-soft)}
+.hold span{position:relative}
+
+/* keyboard */
+.kb{background:var(--soft);border-radius:14px;padding:8px;user-select:none;-webkit-user-select:none}
+.kr{display:flex;gap:5px;justify-content:center;margin:5px 0}
+.key{flex:1;max-width:42px;height:46px;border:0;border-radius:8px;background:var(--card);box-shadow:0 1px 0 var(--line);font-size:17px;cursor:pointer;touch-action:manipulation}
+.key.w{max-width:72px;font-size:13px;font-weight:700} .key.sp{max-width:none;flex:5}
+.key:active{background:var(--line)}
+.out{min-height:44px;padding:10px 12px;border-radius:12px;background:var(--soft);margin-bottom:8px;font-size:17px;word-break:break-all}
+
+/* composer */
+.steps{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.step{display:grid;grid-template-columns:1fr 1fr 26px;gap:6px 12px;align-items:center;background:var(--soft);border-radius:12px;padding:8px 10px}
+.step .wide2{grid-column:2/4}
+label.row{flex-wrap:nowrap} label.row input[type=checkbox]{flex:none}
+.step .k{font-weight:700;font-size:13px}
+.step.p .k{color:var(--touch)} .step.g .k{color:var(--muted)}
+.step input[type=number]{width:100%}
+.x{border:0;background:transparent;font-size:18px;color:var(--muted);cursor:pointer}
+canvas{display:block;width:100%}
+.prev{height:90px;border-radius:12px;background:var(--soft)}
+
+/* scope (bottom) */
+.scope{position:fixed;left:0;right:0;bottom:0;z-index:9;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 16px calc(8px + env(safe-area-inset-bottom))}
+.scope .in{max-width:980px;margin:0 auto;display:flex;gap:12px;align-items:center}
+.scope canvas{height:46px;flex:1 1 0;min-width:0;width:auto}
+.grid>*,.card{min-width:0}
+.scope .lbl{font-size:12px;color:var(--muted);width:112px;flex:none;line-height:1.3}
+.scope .lbl b{display:block;color:var(--ink);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flash{animation:fl .12s}
+@keyframes fl{from{background:var(--sound-soft)}}
+table.kv{width:100%;border-collapse:collapse;font-size:14px}
+table.kv td{padding:7px 0;border-bottom:1px solid var(--line)} table.kv td:last-child{text-align:right;font-weight:700}
+footer{color:var(--muted);font-size:13px;padding:24px 0}
+footer a{color:inherit}
 </style>
 </head>
 <body>
-  <h1>Haptics Lab</h1>
-  <p class="sub">Delay between your touch and the feedback</p>
-  <div class="row" id="delays">
-    <button class="chip on" data-ms="0">0 ms</button>
-    <button class="chip" data-ms="50">50</button>
-    <button class="chip" data-ms="100">100</button>
-    <button class="chip" data-ms="200">200</button>
-    <button class="chip" data-ms="blind">blind</button>
+<div class="wrap">
+<header>
+  <div class="brand"><div class="logo" aria-hidden="true"></div>
+    <div><h1>Haptics Lab</h1><p class="sub">Feel vibration patterns, sounds and their combinations. Build your own and copy the code.</p></div></div>
+  <div class="toolbar">
+    <label class="tog hap on" id="tHap"><span class="dot"></span>Vibration</label>
+    <label class="tog snd on" id="tSnd"><span class="dot"></span>Sound</label>
+    <label class="tog" title="Volume">Vol <input type="range" id="vol" min="0" max="1" step="0.05" value="0.8"></label>
+    <label class="tog" title="Makes every pulse longer for weak motors">Boost <select id="boost"><option value="1">×1</option><option value="1.5">×1.5</option><option value="2">×2</option></select></label>
+    <label class="tog" id="tIos" title="Undocumented Safari switch haptic, single taps only"><span class="dot"></span>iPhone tap β</label>
   </div>
-  <div class="row ch">
-    <label><input type="checkbox" id="cVib" checked> vibration</label>
-    <label><input type="checkbox" id="cSnd" checked> click sound</label>
-    <label><input type="checkbox" id="cFl" checked> flash</label>
+  <p class="notice" id="noVib">This browser has no Vibration API (iPhone / Safari). You still get sound and the pattern view below. Try the experimental iPhone tap toggle: Safari's switch control gives a single tap; it is undocumented and may not work on the newest iOS.</p>
+</header>
+
+<nav><div class="tabs" id="tabs">
+  <button class="tab on" data-t="kinds">Vibration types</button>
+  <button class="tab" data-t="tokens">UI tokens</button>
+  <button class="tab" data-t="knobs">Intensity × sharpness</button>
+  <button class="tab" data-t="gest">Gestures</button>
+  <button class="tab" data-t="keys">Keyboard</button>
+  <button class="tab" data-t="combo">Combine</button>
+  <button class="tab" data-t="timing">Timing</button>
+  <button class="tab" data-t="comp">Composer</button>
+  <button class="tab" data-t="rhythm">Rhythm</button>
+  <button class="tab" data-t="device">Device</button>
+</div></nav>
+
+<!-- ================= VIBRATION TYPES ================= -->
+<section id="kinds" class="on">
+  <h2>Vibration types</h2>
+  <p class="lead">The web can only switch the motor on and off. Everything below is built from that: pulse length, gaps, and fast on/off switching (PWM), which makes a pulse feel weaker or rougher.</p>
+  <div class="grid">
+    <div class="card"><h3><span class="tag">Clicks</span> short, crisp</h3><div class="pads" id="kClicks"></div></div>
+    <div class="card"><h3><span class="tag">Strength</span> same length, different duty</h3><div class="pads" id="kStrength"></div></div>
+    <div class="card"><h3><span class="tag">Multi-tap</span> counting and meaning</h3><div class="pads" id="kMulti"></div></div>
+    <div class="card"><h3><span class="tag">Shapes</span> ramps, swells, fades</h3><div class="pads" id="kShapes"></div></div>
+    <div class="card"><h3><span class="tag">Textures</span> continuous feel</h3><div class="pads" id="kTex"></div></div>
+    <div class="card"><h3><span class="tag">Attention</span> notifications and alarms</h3><div class="pads" id="kAttn"></div></div>
   </div>
-  <button id="tap">TAP</button>
-  <div class="row"><button class="chip" id="reveal">reveal delay</button></div>
-  <div id="log"></div>
-  <p class="note">Feedback fires on touch-down. Vibration uses the Web Vibration API (Chrome on Android); iOS Safari has no vibration API, so on iPhone you get sound + flash only. TAMa 2026/27 · Multisensory Feedback</p>
+  <div class="card" style="margin-top:14px"><h3>Selected pattern</h3><div id="kInfo" class="hint">Tap any tile. Its code appears here.</div></div>
+</section>
+
+<!-- ================= TOKENS ================= -->
+<section id="tokens">
+  <h2>UI tokens</h2>
+  <p class="lead">The 23 tokens of Android's Multisensory Design System (Android 17 QPR2). Each tile plays my web approximation: haptic + sound. Tap a tile to see the matching call on every platform.</p>
+  <div class="grid" id="tokGroups"></div>
+  <div class="card" style="margin-top:14px"><h3 id="tokTitle">Code</h3><div class="codes" id="tokTabs"></div><pre class="code" id="tokCode">Tap a token.</pre></div>
+</section>
+
+<!-- ================= KNOBS ================= -->
+<section id="knobs">
+  <h2>Intensity × sharpness</h2>
+  <p class="lead">iOS Core Haptics and Android's envelope API describe a haptic with the same two values. Tap or drag on the field. Left = dull and low, right = crisp and high. Up = stronger.</p>
+  <div class="grid g2">
+    <div class="card"><canvas id="pad2d" style="aspect-ratio:1;border-radius:14px;touch-action:none;cursor:crosshair"></canvas>
+      <div class="row" style="margin-top:10px;justify-content:space-between"><span>sharpness <span class="val" id="kS">–</span></span><span>intensity <span class="val" id="kI">–</span></span></div></div>
+    <div class="card"><h3>Same event on each platform</h3><div class="codes" id="knTabs"></div><pre class="code" id="knCode">Tap the field.</pre>
+      <p class="hint">The web version maps sharpness to pulse length and sound brightness, intensity to PWM duty and volume. Real phones with Core Haptics or Android envelopes do this in hardware.</p></div>
+  </div>
+</section>
+
+<!-- ================= GESTURES ================= -->
+<section id="gest">
+  <h2>Gestures</h2>
+  <p class="lead">Feedback that follows your finger. Try different settings and notice when it starts to feel like noise.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Slider with detents</h3>
+      <div class="track" id="det"><div class="fill"></div><div class="knob"></div></div>
+      <div class="row" style="margin-top:12px;justify-content:space-between">
+        <div class="chips" id="detN"><button class="chip" data-n="5">5</button><button class="chip on" data-n="12">12</button><button class="chip" data-n="40">40</button><button class="chip" data-n="100">100</button></div>
+        <span>value <span class="val" id="detV">0</span></span></div>
+      <label class="row hint" style="margin-top:10px"><input type="checkbox" id="detThr" checked> rate limit (max one tick per 35 ms, softer when dense)</label></div>
+    <div class="card"><h3>Pull to refresh</h3>
+      <div class="ptr" id="ptr"><div class="ind" id="ptrI">pull down</div><div class="sheet" id="ptrS">Inbox · 3 new</div></div>
+      <p class="hint">Tick when you cross the threshold, softer tick when you go back, success after release.</p></div>
+    <div class="card"><h3>Long press</h3>
+      <button class="hold" id="hold"><div class="prog"></div><span>Hold me</span></button>
+      <label class="row hint" style="margin-top:10px"><input type="checkbox" id="holdBuild" checked> build-up ticks while holding</label></div>
+    <div class="card"><h3>Swipe to delete</h3>
+      <div class="swipe" id="sw"><div class="lbl">Delete</div><div class="item" id="swI"><div class="avatar"></div><div><b>Meeting notes</b><div class="hint" style="margin:0">swipe left</div></div></div></div>
+      <p class="hint">Threshold at 45 %. Cross it and come back to feel the cancel.</p></div>
+    <div class="card" style="grid-column:1/-1"><h3>Surface textures</h3>
+      <div class="chips" id="texSel" style="margin-bottom:10px"><button class="chip" data-x="glass">Glass</button><button class="chip on" data-x="sand">Fine sand</button><button class="chip" data-x="cord">Corduroy</button><button class="chip" data-x="bumps">Bumps</button><button class="chip" data-x="gravel">Gravel</button><button class="chip" data-x="grid">Grid lines</button></div>
+      <canvas class="texture" id="tex"></canvas><p class="hint">Drag your finger across the surface. Ticks fire per distance travelled, not per time.</p></div>
+  </div>
+</section>
+
+<!-- ================= KEYBOARD ================= -->
+<section id="keys">
+  <h2>Keyboard</h2>
+  <p class="lead">Space, return and delete have their own tokens on Android. Compare styles and type a sentence with each.</p>
+  <div class="card">
+    <div class="chips" id="kbStyle" style="margin-bottom:10px"><button class="chip on" data-s="tokens">Per-key tokens</button><button class="chip" data-s="same">One click for all</button><button class="chip" data-s="heavy">Too strong</button><button class="chip" data-s="none">No feedback</button></div>
+    <div class="out" id="kbOut"></div>
+    <div class="kb" id="kb"></div>
+  </div>
+</section>
+
+<!-- ================= COMBINE ================= -->
+<section id="combo">
+  <h2>Combine haptics and sound</h2>
+  <p class="lead">Sound changes how a vibration feels. Pick any haptic and any sound, then compare matched and mismatched pairs.</p>
+  <div class="grid g2">
+    <div class="card"><h3><span class="tag">Haptic</span></h3><div class="chips" id="cH"></div>
+      <h3 style="margin-top:14px"><span class="tag">Sound</span></h3><div class="chips" id="cS"></div>
+      <button class="big" id="cPlay" style="width:150px">PLAY</button></div>
+    <div class="card"><h3>Try these pairs</h3><div class="pads" id="cPairs"></div>
+      <h3 style="margin-top:16px">Ghost haptic</h3>
+      <p class="hint" style="margin-top:0">Two identical taps. Below some gap you feel only one.</p>
+      <div class="chips" id="ghost"><button class="chip" data-g="10">10 ms</button><button class="chip" data-g="25">25 ms</button><button class="chip" data-g="50">50 ms</button><button class="chip" data-g="100">100 ms</button><button class="chip" data-g="200">200 ms</button></div></div>
+  </div>
+</section>
+
+<!-- ================= TIMING ================= -->
+<section id="timing">
+  <h2>Timing</h2>
+  <p class="lead">Touch feedback has a deadline of about 50 ms. Sound and vibration also need to land together.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Delay after touch</h3>
+      <div class="chips" id="dly"><button class="chip on" data-ms="0">0 ms</button><button class="chip" data-ms="50">50</button><button class="chip" data-ms="100">100</button><button class="chip" data-ms="200">200</button><button class="chip" data-ms="blind">blind</button></div>
+      <button class="big" id="dTap">TAP</button>
+      <div class="row" style="justify-content:center"><button class="btn ghost" id="dRev" style="display:none">reveal delay</button></div>
+      <p class="hint" id="dLog" style="text-align:center"></p></div>
+    <div class="card"><h3>Sound vs vibration offset</h3>
+      <label class="f">offset <span><span class="val" id="offV">0</span> ms · <span id="offT">together</span></span><input type="range" id="off" min="-150" max="150" step="10" value="0"></label>
+      <button class="big" id="oTap" style="background:var(--ink);box-shadow:none">TAP</button>
+      <label class="row hint"><input type="checkbox" id="latComp" checked> compensate audio output latency (<span id="latV">?</span> ms on this device)</label>
+      <p class="hint">Negative = vibration first. Most people accept sound a little late, not early.</p></div>
+  </div>
+</section>
+
+<!-- ================= COMPOSER ================= -->
+<section id="comp">
+  <h2>Composer</h2>
+  <p class="lead">Build your own pattern from pulses and gaps. Intensity uses PWM on the web and real amplitude in the exported Android and iOS code.</p>
+  <div class="grid g2">
+    <div class="card">
+      <div class="chips" id="cmpPre" style="margin-bottom:10px"></div>
+      <canvas class="prev" id="cmpPrev"></canvas>
+      <div class="steps" id="steps"></div>
+      <div class="row"><button class="btn ghost" id="addP">+ pulse</button><button class="btn ghost" id="addG">+ gap</button><button class="btn ghost" id="clr">clear</button>
+        <label class="row hint" style="margin:0"><input type="checkbox" id="loop"> loop</label>
+        <button class="btn red" id="cmpPlay" style="margin-left:auto">Play</button></div>
+      <label class="f" style="margin-top:12px">sound with each pulse <select id="cmpSnd"><option value="">none</option><option value="tick">tick</option><option value="click" selected>click</option><option value="thud">thud</option><option value="blip">blip</option></select></label>
+    </div>
+    <div class="card"><h3>Export</h3><div class="codes" id="exTabs"></div><pre class="code" id="exCode"></pre>
+      <p class="hint" id="exHint"></p></div>
+  </div>
+</section>
+
+<!-- ================= RHYTHM ================= -->
+<section id="rhythm">
+  <h2>Rhythm</h2>
+  <p class="lead">Haptics work best with a beat. A metronome you can feel, with accents, for timers, workouts or music.</p>
+  <div class="card">
+    <label class="f">tempo <span><span class="val" id="bpmV">96</span> BPM</span><input type="range" id="bpm" min="40" max="200" value="96"></label>
+    <div class="row" style="margin:12px 0"><div class="chips" id="meter"><button class="chip" data-m="2">2/4</button><button class="chip" data-m="3">3/4</button><button class="chip on" data-m="4">4/4</button><button class="chip" data-m="5">5/4</button></div>
+      <div class="chips" id="rMode"><button class="chip" data-r="hap">feel only</button><button class="chip on" data-r="both">feel + hear</button><button class="chip" data-r="snd">hear only</button></div></div>
+    <div class="row" id="beats" style="gap:8px;margin:14px 0"></div>
+    <button class="btn red" id="rGo">Start</button>
+  </div>
+</section>
+
+<!-- ================= DEVICE ================= -->
+<section id="device">
+  <h2>Your device</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Capabilities</h3><table class="kv" id="dev"></table></div>
+    <div class="card"><h3>Shortest pulse you can feel</h3><p class="hint" style="margin-top:0">Cheap motors ignore very short pulses. Tap from the left; the first one you feel tells you how short your patterns can be.</p>
+      <div class="chips" id="minP"></div>
+      <h3 style="margin-top:16px">Motor response</h3><p class="hint" style="margin-top:0">One 300 ms pulse vs the same time as 30 × 5 ms. A good LRA follows the pulses, a slow ERM blurs them.</p>
+      <div class="row"><button class="btn ghost" id="mr1">300 ms on</button><button class="btn ghost" id="mr2">30 × 5 ms</button></div></div>
+  </div>
+</section>
+
+<footer>Made for the TAMa essay <i>Multisensory Feedback (Haptics and Sounds)</i>, FIT VUT Brno, 2026/27. Android tokens from developer.android.com (MultisensoryManager, API 37.2). Web patterns are approximations; the sound is synthesized in the browser. <a href="https://github.com/afariz1/haptics-lab">Source</a></footer>
+</div>
+
+<div class="scope"><div class="in"><div class="lbl"><b id="scName">ready</b><span id="scDesc">pattern view</span></div><canvas id="scope"></canvas></div></div>
+
 <script>
-  const vibOK = typeof navigator.vibrate === "function";
-  if (!vibOK) { const c = document.getElementById("cVib"); c.checked = false; c.disabled = true; c.parentElement.style.opacity = .5; }
-  let mode = "0", blindMs = null, ctx = null;
-  const log = document.getElementById("log");
-  document.getElementById("delays").addEventListener("click", e => {
-    const b = e.target.closest("button"); if (!b) return;
-    document.querySelectorAll("#delays .chip").forEach(x => x.classList.toggle("on", x === b));
-    mode = b.dataset.ms; document.body.classList.toggle("blind", mode === "blind");
-    blindMs = null; log.textContent = mode === "blind" ? "Each tap gets a random delay. Guess it, then press reveal." : "";
-  });
-  function click() {
-    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
-    const t = ctx.currentTime, len = 0.03;
-    const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * len), ctx.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.004));
-    const src = ctx.createBufferSource(); src.buffer = buf;
-    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 3200; bp.Q.value = 1.2;
-    const g = ctx.createGain(); g.gain.value = 0.9;
-    src.connect(bp).connect(g).connect(ctx.destination); src.start(t);
-  }
-  function fire() {
-    if (document.getElementById("cVib").checked && vibOK) navigator.vibrate(15);
-    if (document.getElementById("cSnd").checked) click();
-    if (document.getElementById("cFl").checked) { document.body.classList.add("flash"); setTimeout(() => document.body.classList.remove("flash"), 70); }
-  }
-  document.getElementById("tap").addEventListener("pointerdown", e => {
-    e.preventDefault();
-    if (ctx && ctx.state === "suspended") ctx.resume();
-    if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); }
-    let ms = mode === "blind" ? [0, 50, 100, 200][Math.floor(Math.random() * 4)] : +mode;
-    if (mode === "blind") { blindMs = ms; log.textContent = "Tapped. Guess the delay…"; }
-    ms === 0 ? fire() : setTimeout(fire, ms);
-  });
-  document.getElementById("reveal").addEventListener("click", () => {
-    log.textContent = blindMs === null ? "Tap first." : `That tap had ${blindMs} ms delay.`;
-  });
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const vibOK=typeof navigator.vibrate==="function";
+const S={hap:true,snd:true,ios:false,vol:.8,boost:1};
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ------------------------------------------------ toggles */
+function toggle(el,key,cb){el.addEventListener("click",()=>{S[key]=!S[key];el.classList.toggle("on",S[key]);cb&&cb();});}
+toggle($("#tHap"),"hap");toggle($("#tSnd"),"snd");toggle($("#tIos"),"ios");
+$("#vol").oninput=e=>S.vol=+e.target.value; $("#boost").onchange=e=>S.boost=+e.target.value;
+if(!vibOK)$("#noVib").classList.add("show");
+$$(".tab").forEach(t=>t.onclick=()=>{$$(".tab").forEach(x=>x.classList.toggle("on",x===t));$$("section").forEach(s=>s.classList.toggle("on",s.id===t.dataset.t));redrawMinis($("#"+t.dataset.t));
+  if(t.dataset.t==="gest"){drawTex();detLayout();detSet(20,false);} if(t.dataset.t==="knobs")drawPad(); if(t.dataset.t==="comp")renderSteps(); window.scrollTo({top:0});});
+
+/* ------------------------------------------------ pattern helpers (arrays: on, off, on, ...) */
+function pwm(ms,duty,period=10){duty=Math.max(.05,Math.min(1,duty));if(duty>=.97)return[ms];const on=Math.max(1,Math.round(period*duty)),off=Math.max(1,period-on),o=[];let t=0;while(t<ms){const a=Math.min(on,ms-t);o.push(a);t+=a;if(t>=ms)break;const b=Math.min(off,ms-t);o.push(b);t+=b;}if(o.length%2===0)o.pop();return o;}
+function cat(...xs){const o=[];for(const x of xs){if(x&&typeof x==="object"&&!Array.isArray(x)){if(!o.length)o.push(0,x.gap);else if(o.length%2)o.push(x.gap);else o[o.length-1]+=x.gap;}else{const a=Array.isArray(x)?x:[x];if(o.length%2)o.push(0);o.push(...a);}}return o;}
+const G=n=>({gap:n});
+function rep(p,n,gap){const xs=[];for(let i=0;i<n;i++){if(i)xs.push(G(gap));xs.push(p);}return cat(...xs);}
+function ramp(ms,from,to,seg=40,period=10){const n=Math.max(1,Math.round(ms/seg)),xs=[];for(let i=0;i<n;i++){xs.push(pwm(seg,from+(to-from)*(n===1?1:i/(n-1)),period));}return cat(...xs);}
+function noiseTex(ms,minOn,maxOn,minOff,maxOff){const o=[];let t=0;while(t<ms){const a=minOn+Math.random()*(maxOn-minOn)|0;o.push(a);t+=a;const b=minOff+Math.random()*(maxOff-minOff)|0;o.push(b);t+=b;}o.pop();return o;}
+const dur=p=>p.reduce((a,b)=>a+b,0);
+
+/* ------------------------------------------------ output: vibration */
+function iosTap(){const l=document.createElement("label"),i=document.createElement("input");i.type="checkbox";i.setAttribute("switch","");l.appendChild(i);l.style.cssText="position:fixed;opacity:0;pointer-events:none";document.body.appendChild(l);l.click();setTimeout(()=>l.remove(),50);}
+let lastPat=[],lastSnd=[];
+function vib(p){p=Array.isArray(p)?p:[p];const q=p.map((v,i)=>i%2?v:Math.max(1,Math.round(v*S.boost)));
+  if(S.hap){if(vibOK){navigator.vibrate(0);navigator.vibrate(q);}else if(S.ios){let t=0;q.forEach((v,i)=>{if(i%2===0)setTimeout(iosTap,t);t+=v;});}}
+  return q;}
+
+/* ------------------------------------------------ output: sound (synth) */
+let AC=null,master=null;
+function ac(){if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});master=AC.createGain();master.connect(AC.destination);}if(AC.state==="suspended")AC.resume();master.gain.value=S.vol;return AC;}
+function outLat(){if(!AC)return 0;return((AC.outputLatency||0)+(AC.baseLatency||0))*1000;}
+function nz(t,{f=3000,q=1,d=.03,dec=.006,g=.8,type="bandpass"}={}){const c=ac(),n=Math.ceil(c.sampleRate*d),b=c.createBuffer(1,n,c.sampleRate),x=b.getChannelData(0);for(let i=0;i<n;i++)x[i]=(Math.random()*2-1)*Math.exp(-i/(c.sampleRate*dec));const s=c.createBufferSource();s.buffer=b;const fl=c.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const gn=c.createGain();gn.gain.value=g;s.connect(fl).connect(gn).connect(master);s.start(t);}
+function tn(t,{f=880,f2=null,d=.15,type="sine",g=.3,a=.004}={}){const c=ac(),o=c.createOscillator(),gn=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);gn.gain.setValueAtTime(.0001,t);gn.gain.exponentialRampToValueAtTime(g,t+a);gn.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(gn).connect(master);o.start(t);o.stop(t+d+.02);}
+const SND={
+  tick:(t,k=1)=>nz(t,{f:4800,q:1.4,d:.02,dec:.0025,g:.7*k}),
+  soft:(t,k=1)=>nz(t,{f:2600,q:.9,d:.02,dec:.002,g:.35*k}),
+  click:(t,k=1)=>nz(t,{f:3200,q:1.2,d:.03,dec:.004,g:.9*k}),
+  pop:(t,k=1)=>{tn(t,{f:900,f2:420,d:.06,g:.35*k,type:"triangle"});nz(t,{f:3500,d:.015,dec:.002,g:.4*k});},
+  thud:(t,k=1)=>{tn(t,{f:130,f2:55,d:.16,g:.7*k});nz(t,{f:500,q:.7,d:.04,dec:.01,g:.4*k,type:"lowpass"});},
+  knock:(t,k=1)=>{tn(t,{f:220,f2:150,d:.08,g:.45*k,type:"triangle"});nz(t,{f:1200,d:.03,dec:.006,g:.5*k});},
+  blip:(t,k=1)=>tn(t,{f:1320,d:.07,g:.22*k,type:"sine"}),
+  up:(t,k=1)=>{tn(t,{f:784,d:.12,g:.22*k});tn(t+.09,{f:1175,d:.22,g:.22*k});},
+  down:(t,k=1)=>{tn(t,{f:494,d:.12,g:.25*k,type:"triangle"});tn(t+.1,{f:330,d:.25,g:.25*k,type:"triangle"});},
+  err:(t,k=1)=>{[0,.11,.22].forEach(o=>tn(t+o,{f:196,d:.09,g:.18*k,type:"square"}));},
+  errHi:(t,k=1)=>{[0,.1,.2].forEach(o=>{tn(t+o,{f:220,d:.09,g:.2*k,type:"sawtooth"});tn(t+o,{f:233,d:.09,g:.15*k,type:"sawtooth"});});},
+  sweepUp:(t,k=1)=>tn(t,{f:300,f2:1200,d:.22,g:.2*k,type:"triangle"}),
+  sweepDown:(t,k=1)=>tn(t,{f:1000,f2:260,d:.22,g:.2*k,type:"triangle"}),
+  lock:(t,k=1)=>{nz(t,{f:4200,d:.02,dec:.002,g:.5*k});tn(t+.05,{f:160,f2:90,d:.12,g:.5*k});},
+  unlock:(t,k=1)=>{tn(t,{f:160,f2:240,d:.08,g:.4*k});nz(t+.07,{f:5000,d:.02,dec:.002,g:.55*k});},
+  chime:(t,k=1)=>{tn(t,{f:1047,d:.5,g:.18*k});tn(t,{f:1568,d:.4,g:.1*k});},
+  space:(t,k=1)=>nz(t,{f:1300,q:.8,d:.04,dec:.006,g:.8*k}),
+  ret:(t,k=1)=>{nz(t,{f:1800,d:.04,dec:.006,g:.8*k});nz(t+.035,{f:900,d:.04,dec:.008,g:.5*k});},
+  del:(t,k=1)=>nz(t,{f:2200,q:1.6,d:.025,dec:.003,g:.55*k}),
+  grain:(t,k=1)=>nz(t,{f:3800+Math.random()*1500,q:2,d:.012,dec:.0015,g:.35*k}),
+  whoosh:(t,k=1)=>nz(t,{f:1200,q:.5,d:.25,dec:.08,g:.35*k,type:"bandpass"}),
+  bell:(t,k=1)=>{[0,.18].forEach(o=>{tn(t+o,{f:1319,d:.35,g:.16*k});tn(t+o,{f:2637,d:.2,g:.05*k});});},
+};
+function snd(name,delayMs=0,k=1){if(!S.snd||!name||!SND[name])return;const c=ac();SND[name](c.currentTime+.005+delayMs/1000,k);}
+
+/* ------------------------------------------------ play + scope */
+function play(pat,sound,name,desc,{hapDelay=0,sndDelay=0,k=1}={}){
+  if(sound)ac();
+  let q=pat;
+  if(pat&&pat.length){if(hapDelay>0)setTimeout(()=>vib(pat),hapDelay);else q=vib(pat);}
+  if(sound)snd(sound,sndDelay,k);
+  lastPat=pat||[];lastSnd=sound?[sndDelay]:[];scopeDraw(name,desc,hapDelay,sndDelay);
+}
+const sc=$("#scope");
+function fit(cv){const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);const x=cv.getContext("2d");x.setTransform(d,0,0,d,0,0);return[x,r.width,r.height];}
+function drawPattern(cv,pat,{sndAt=[],hapOff=0,max=null,color=null,mini=false}={}){const[x,w,h]=fit(cv);if(!w)return;x.clearRect(0,0,w,h);
+  const total=Math.max(max||0,dur(pat)+hapOff+(mini?0:40),...sndAt.map(s=>s+200),mini?0:200);const k=w/total;
+  if(mini){x.fillStyle=css("--line");x.fillRect(0,h/2-.5,w,1);let t=0;x.fillStyle=color||css("--touch");pat.forEach((v,i)=>{if(i%2===0)x.fillRect(t*k,1,Math.max(1.5,v*k),h-2);t+=v;});return;}
+  x.fillStyle=css("--line");for(let ms=0;ms<total;ms+=100){x.fillRect(ms*k,h-6,1,6);}
+  let t=hapOff;x.fillStyle=color||css("--touch");pat.forEach((v,i)=>{if(i%2===0)x.fillRect(t*k,6,Math.max(1.5,v*k),h-16);t+=v;});
+  x.fillStyle=css("--sound");sndAt.forEach(s=>{x.beginPath();x.arc(s*k+4,8,4,0,7);x.fill();x.fillRect(s*k+3,8,2,h-18);});
+  x.fillStyle=css("--muted");x.font="10px system-ui";x.fillText(Math.round(total)+" ms",w-46,h-8);}
+function redrawMinis(root){root.querySelectorAll(".pad").forEach(b=>b._draw&&b._draw());}
+let scT=null;
+function scopeDraw(name,desc,hapOff=0,sndOff=0){$("#scName").textContent=name||"pattern";$("#scDesc").textContent=desc||(lastPat.length?dur(lastPat)+" ms":"");
+  drawPattern(sc,lastPat,{sndAt:lastSnd.length?[sndOff]:[],hapOff});}
+addEventListener("resize",()=>{scopeDraw($("#scName").textContent,$("#scDesc").textContent);drawTex();drawPad();renderPrev();});
+
+/* ------------------------------------------------ code generation */
+const fmt=a=>a.join(", ");
+function webCode(p){return`navigator.vibrate([${fmt(p)}]);`;}
+function androidWave(p){const t=[0,...p],a=[0,...p.map((_,i)=>i%2?0:255)];
+  return`// legacy on/off waveform (works everywhere)\nval timings = longArrayOf(${fmt(t)})\nval amps = intArrayOf(${fmt(a)})\nvibrator.vibrate(VibrationEffect.createWaveform(timings, amps, -1))`;}
+function rnCode(p){return`import { Vibration } from "react-native";\nVibration.vibrate([0, ${fmt(p)}]); // Android; iOS ignores the pattern`;}
+function ahapFromSteps(steps){const ev=[];let t=0;steps.forEach(s=>{if(s.t==="p"){const I=(s.i/100).toFixed(2),Sh=(s.s/100).toFixed(2);
+  if(s.ms<=20)ev.push(`  {"Event":{"Time":${(t/1000).toFixed(3)},"EventType":"HapticTransient","EventParameters":[\n    {"ParameterID":"HapticIntensity","ParameterValue":${I}},{"ParameterID":"HapticSharpness","ParameterValue":${Sh}}]}}`);
+  else ev.push(`  {"Event":{"Time":${(t/1000).toFixed(3)},"EventType":"HapticContinuous","EventDuration":${(s.ms/1000).toFixed(3)},"EventParameters":[\n    {"ParameterID":"HapticIntensity","ParameterValue":${I}},{"ParameterID":"HapticSharpness","ParameterValue":${Sh}}]}}`);}t+=s.ms;});
+  return`{"Version":1.0,"Pattern":[\n${ev.join(",\n")}\n]}`;}
+function bindCopy(pre){pre.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(pre.textContent).then(()=>{pre.classList.add("copied");setTimeout(()=>pre.classList.remove("copied"),1200);});};}
+$$("pre.code").forEach(bindCopy);
+function codeTabs(tabsEl,preEl,variants,keep){const keys=Object.keys(variants);let cur=keep&&keys.includes(tabsEl.dataset.cur)?tabsEl.dataset.cur:keys[0];
+  tabsEl.innerHTML="";keys.forEach(k=>{const b=document.createElement("button");b.className="chip"+(k===cur?" on":"");b.textContent=k;b.onclick=()=>{tabsEl.dataset.cur=k;codeTabs(tabsEl,preEl,variants,true);};tabsEl.appendChild(b);});
+  tabsEl.dataset.cur=cur;preEl.textContent=variants[cur];}
+
+/* ------------------------------------------------ mini pattern previews on tiles */
+function tile(parent,{name,desc,pat,sound,onPlay}){const b=document.createElement("button");b.className="pad";b.innerHTML=`<b>${name}</b><small>${desc||""}</small><canvas class="mini"></canvas>`;
+  b.addEventListener("click",()=>{$$(".pad.sel").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");const p=typeof pat==="function"?pat():pat;play(p,sound,name,desc);onPlay&&onPlay(p);});
+  const pv=typeof pat==="function"?pat():pat;b._draw=()=>drawPattern(b.querySelector("canvas"),pv,{max:Math.max(300,dur(pv)),mini:true});
+  parent.appendChild(b);requestAnimationFrame(b._draw);return b;}
+
+/* ================================================= 1. VIBRATION TYPES */
+const KINDS={
+ kClicks:[["Tick","8 ms",[8]],["Click","14 ms",[14]],["Knock","24 ms",[24]],["Thud","45 ms",[45]],["Buzz","120 ms",[120]],["Long buzz","400 ms",[400]]],
+ kStrength:[["Whisper","60 ms · 20 %",pwm(60,.2)],["Soft","60 ms · 40 %",pwm(60,.4)],["Medium","60 ms · 60 %",pwm(60,.6)],["Firm","60 ms · 80 %",pwm(60,.8)],["Full","60 ms · 100 %",[60]],["Rough","60 ms · 50 % slow PWM",pwm(60,.5,24)]],
+ kMulti:[["Double tap","2 × 12",rep([12],2,70)],["Triple tap","3 × 12",rep([12],3,70)],["Quick double","2 × 10, 35 gap",rep([10],2,35)],["Long–short","40 + 12",cat([40],G(80),[12])],["Short–long","12 + 40",cat([12],G(80),[40])],["Count to five","5 ticks",rep([10],5,120)]],
+ kShapes:[["Ramp up","0 → 100 %",ramp(320,.15,1)],["Ramp down","100 → 0 %",ramp(320,1,.15)],["Swell","up and down",cat(ramp(200,.15,1),ramp(200,1,.15))],["Heartbeat","lub-dub",cat([30],G(90),[18],G(420),[30],G(90),[18])],["Bounce","decaying taps",cat([30],G(140),[20],G(100),[12],G(70),[7],G(50),[4])],["Accelerate","gaps shrink",cat([10],G(200),[10],G(140),[10],G(95),[10],G(60),[10],G(35),[10],G(20),[10])]],
+ kTex:[["Purr","fast fine PWM",pwm(500,.3,6)],["Rumble","slow PWM",pwm(500,.4,30)],["Engine","throbbing",cat(pwm(90,.8,12),G(30),pwm(90,.35,12),G(30),pwm(90,.8,12),G(30),pwm(90,.35,12))],["Gravel","random grains",()=>noiseTex(600,3,9,10,40)],["Rain","sparse random",()=>noiseTex(900,4,8,40,140)],["Zipper","even ticks",rep([4],18,22)]],
+ kAttn:[["Notification","250 · 250 · 250",cat([250],G(250),[250])],["Message","two short",cat([60],G(120),[60])],["Ringtone","ring pattern",cat([400],G(200),[400],G(800),[400],G(200),[400])],["Alarm","insistent",rep([180],6,120)],["SOS","··· ––– ···",cat(rep([80],3,80),G(240),rep([240],3,80),G(240),rep([80],3,80))],["Timer done","ascending",cat(pwm(100,.4),G(80),pwm(100,.7),G(80),[160])]],
+};
+for(const[id,list]of Object.entries(KINDS)){const el=$("#"+id);list.forEach(([n,d,p])=>tile(el,{name:n,desc:d,pat:p,sound:null,onPlay:pp=>{
+  codeTabs($("#kInfoTabs")||mkInfo(),$("#kCode"),{Web:webCode(pp),Android:androidWave(pp),"React Native":rnCode(pp)},true);$("#kTitle").textContent=n+" · "+dur(pp)+" ms";}}));}
+function mkInfo(){$("#kInfo").outerHTML=`<div id="kTitle" style="font-weight:700"></div><div class="codes" id="kInfoTabs"></div><pre class="code" id="kCode"></pre><p class="hint">These are vibration-only. Add sound in the Combine tab. Use Motor boost if short patterns feel empty on your phone.</p>`;bindCopy($("#kCode"));return $("#kInfoTabs");}
+
+/* ================================================= 2. TOKENS */
+const TOK=[
+ ["Outcome",[["SUCCESS",cat([12],G(90),[20]),"up","CONFIRM",".success","notificationAsync(NotificationFeedbackType.Success)"],
+   ["FAILURE",rep([18],3,60),"err","REJECT",".error","notificationAsync(NotificationFeedbackType.Error)"],
+   ["FAILURE_HIGH_EMPHASIS",cat([45],G(50),[45],G(50),[70]),"errHi","REJECT",".error","notificationAsync(NotificationFeedbackType.Error)"]]],
+ ["Tap",[["TAP_LOW_EMPHASIS",[5],"soft","CLOCK_TICK",".impact(weight: .light, intensity: 0.5)","impactAsync(ImpactFeedbackStyle.Light)"],
+   ["TAP_MEDIUM_EMPHASIS",[11],"click","VIRTUAL_KEY",".impact(weight: .light)","impactAsync(ImpactFeedbackStyle.Light)"],
+   ["TAP_HIGH_EMPHASIS",[20],"knock","CONTEXT_CLICK",".impact(weight: .medium)","impactAsync(ImpactFeedbackStyle.Medium)"],
+   ["LONG_PRESS",[32],"thud","LONG_PRESS",".impact(weight: .medium)","performAndroidHapticsAsync(AndroidHaptics.Long_Press)"]]],
+ ["State",[["SWITCH_ON",[10],"tick","TOGGLE_ON",".selection","performAndroidHapticsAsync(AndroidHaptics.Toggle_On)"],
+   ["SWITCH_OFF",[6],"soft","TOGGLE_OFF",".selection","performAndroidHapticsAsync(AndroidHaptics.Toggle_Off)"],
+   ["LOCK",cat([6],G(45),[28]),"lock","—",".impact(weight: .heavy)","impactAsync(ImpactFeedbackStyle.Heavy)"],
+   ["UNLOCK",cat([20],G(45),[7]),"unlock","—",".impact(weight: .light)","impactAsync(ImpactFeedbackStyle.Light)"],
+   ["START",ramp(160,.2,1),"sweepUp","CONFIRM",".impact(weight: .medium)","impactAsync(ImpactFeedbackStyle.Medium)"],
+   ["PAUSE",rep([14],2,110),"knock","—",".impact(weight: .light)","impactAsync(ImpactFeedbackStyle.Light)"],
+   ["STOP",[38],"sweepDown","—",".impact(weight: .heavy)","impactAsync(ImpactFeedbackStyle.Heavy)"],
+   ["CANCEL",rep([8],2,45),"down","—",".impact(flexibility: .soft)","impactAsync(ImpactFeedbackStyle.Soft)"]]],
+ ["Keyboard",[["KEYPRESS_STANDARD",[5],"tick","KEYBOARD_TAP",".impact(flexibility: .soft, intensity: 0.5)","impactAsync(ImpactFeedbackStyle.Soft)"],
+   ["KEYPRESS_SPACEBAR",[9],"space","KEYBOARD_TAP",".impact(flexibility: .soft, intensity: 0.7)","impactAsync(ImpactFeedbackStyle.Soft)"],
+   ["KEYPRESS_RETURN",cat([12],G(35),[6]),"ret","KEYBOARD_TAP",".impact(weight: .light)","impactAsync(ImpactFeedbackStyle.Light)"],
+   ["KEYPRESS_DELETE",[4],"del","KEYBOARD_TAP",".impact(flexibility: .soft, intensity: 0.4)","impactAsync(ImpactFeedbackStyle.Soft)"]]],
+ ["Gesture",[["DRAG_INDICATOR_CONTINUOUS",rep([3],12,25),"grain","SEGMENT_FREQUENT_TICK",".selection","selectionAsync()"],
+   ["DRAG_INDICATOR_DISCRETE",rep([7],5,70),"tick","SEGMENT_TICK",".selection","selectionAsync()"],
+   ["DRAG_INDICATOR_THRESHOLD_LIMIT",cat([22],G(35),[22]),"pop","GESTURE_THRESHOLD_ACTIVATE",".impact(weight: .medium)","impactAsync(ImpactFeedbackStyle.Medium)"],
+   ["SWIPE_INDICATOR_THRESHOLD_LIMIT",[15],"pop","GESTURE_THRESHOLD_ACTIVATE",".impact(weight: .medium)","impactAsync(ImpactFeedbackStyle.Medium)"]]],
+];
+TOK.forEach(([g,list])=>{const c=document.createElement("div");c.className="card";c.innerHTML=`<h3><span class="tag">${g}</span></h3><div class="pads"></div>`;$("#tokGroups").appendChild(c);
+  list.forEach(([n,p,s,hfc,ios,expo])=>tile(c.querySelector(".pads"),{name:n.replace(/_/g," ").toLowerCase(),desc:dur(p)+" ms + sound",pat:p,sound:s,onPlay:pp=>{
+    $("#tokTitle").textContent="TOKEN_"+n;
+    codeTabs($("#tokTabs"),$("#tokCode"),{
+     "Android 17 QPR2":`// API 37.2: sound + haptic by the system\nval msm = context.getSystemService(MultisensoryManager::class.java)\nmsm?.playToken(MultisensoryManager.TOKEN_${n})`,
+     "Android fallback":hfc==="—"?`// no 1:1 HapticFeedbackConstants for ${n}\n// option: compose it\nval e = VibrationEffect.startComposition()\n  .addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 0.7f)\n  .compose()\nvibrator.vibrate(e)`:`view.performHapticFeedback(HapticFeedbackConstants.${hfc})`,
+     "iOS SwiftUI":`.sensoryFeedback(${ios}, trigger: value)`,
+     "Expo":`import * as Haptics from "expo-haptics";\nHaptics.${expo};`,
+     "Web":webCode(pp)},true);}}));});
+
+/* ================================================= 3. KNOBS */
+const pad2=$("#pad2d");let kVal=null,kLast=0;
+function drawPad(){if(!pad2.offsetParent)return;const[x,w,h]=fit(pad2);const gr=x.createLinearGradient(0,0,w,0);gr.addColorStop(0,css("--touch-soft"));gr.addColorStop(1,css("--sound-soft"));x.fillStyle=gr;x.fillRect(0,0,w,h);
+  x.strokeStyle=css("--line");for(let i=1;i<4;i++){x.beginPath();x.moveTo(w*i/4,0);x.lineTo(w*i/4,h);x.moveTo(0,h*i/4);x.lineTo(w,h*i/4);x.stroke();}
+  x.fillStyle=css("--muted");x.font="12px system-ui";x.fillText("dull",8,h-10);x.fillText("crisp",w-40,h-10);x.fillText("strong",8,16);
+  const L=[["thud",.08,.9],["rumble",.08,.45],["error",.25,.95],["success",.45,.78],["toggle",.6,.6],["picker",.55,.42],["key",.78,.3],["ping",.95,.68]];
+  L.forEach(([n,s,i])=>{x.fillStyle=css("--muted");x.beginPath();x.arc(s*w,(1-i)*h,3,0,7);x.fill();x.textAlign=s>.8?"right":"left";x.fillText(n,s*w+(s>.8?-6:6),(1-i)*h+4);});x.textAlign="left";
+  if(kVal){x.fillStyle=css("--ink");x.beginPath();x.arc(kVal[0]*w,(1-kVal[1])*h,9,0,7);x.fill();}}
+function knob(s,i){kVal=[s,i];drawPad();$("#kS").textContent=s.toFixed(2);$("#kI").textContent=i.toFixed(2);
+  const d=Math.round(45-37*s),p=pwm(d,.2+.8*i,s<.35?16:8);
+  const c=ac(),t=c.currentTime+.005;if(S.snd){nz(t,{f:220*Math.pow(26,s),q:.8+s,d:.06,dec:.05-.045*s,g:(.15+.85*i)*.9});if(s<.35)tn(t,{f:70+60*s,f2:45,d:.14,g:.6*i});}
+  vib(p);lastPat=p;lastSnd=S.snd?[0]:[];scopeDraw("intensity "+i.toFixed(2)+" · sharpness "+s.toFixed(2),d+" ms");
+  const prim=i<.35&&s>.5?"PRIMITIVE_LOW_TICK":s<.33?"PRIMITIVE_THUD":s<.66?"PRIMITIVE_CLICK":"PRIMITIVE_TICK";const flex=s<.33?".soft":s<.66?".solid":".rigid";
+  codeTabs($("#knTabs"),$("#knCode"),{
+   "Core Haptics":`CHHapticEvent(eventType: .hapticTransient,\n  parameters: [\n    .init(parameterID: .hapticIntensity, value: ${i.toFixed(2)}),\n    .init(parameterID: .hapticSharpness, value: ${s.toFixed(2)})],\n  relativeTime: 0)`,
+   "SwiftUI":`.sensoryFeedback(.impact(flexibility: ${flex}, intensity: ${i.toFixed(2)}), trigger: value)`,
+   "Android 16 envelope":`VibrationEffect.BasicEnvelopeBuilder()\n  .setInitialSharpness(${s.toFixed(2)}f)\n  .addControlPoint(${i.toFixed(2)}f, ${s.toFixed(2)}f, 20L)\n  .addControlPoint(0f, ${s.toFixed(2)}f, ${Math.round(10+30*(1-s))}L)\n  .build()`,
+   "Android 11 primitive":`VibrationEffect.startComposition()\n  .addPrimitive(VibrationEffect.Composition.${prim}, ${i.toFixed(2)}f)\n  .compose()`,
+   "Web":webCode(p)},true);}
+function padEv(e){const r=pad2.getBoundingClientRect();const s=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),i=Math.min(1,Math.max(0,1-(e.clientY-r.top)/r.height));const now=performance.now();if(e.type==="pointerdown"||now-kLast>110){kLast=now;knob(s,i);}}
+pad2.addEventListener("pointerdown",e=>{pad2.setPointerCapture(e.pointerId);padEv(e);});pad2.addEventListener("pointermove",e=>{if(e.buttons||e.pointerType==="touch")padEv(e);});
+
+/* ================================================= 4. GESTURES */
+// detent slider
+let detN=12,detIdx=0,detLast=0;const det=$("#det");
+function detLayout(){det.querySelectorAll(".det").forEach(d=>d.remove());if(detN<=40)for(let i=0;i<=detN;i++){const d=document.createElement("div");d.className="det";d.style.left=(20+(det.clientWidth-40)*i/detN)+"px";det.appendChild(d);}}
+function detSet(px,fire){const w=det.clientWidth-40,f=Math.min(1,Math.max(0,(px-20)/w)),idx=Math.round(f*detN);det.querySelector(".knob").style.left=(20+w*f)+"px";det.querySelector(".fill").style.width=(20+w*f)+"px";
+  if(idx!==detIdx&&fire){const now=performance.now(),thr=$("#detThr").checked;if(!thr||now-detLast>35){detLast=now;const dense=detN>=40;const edge=idx===0||idx===detN;play(edge?[22]:thr&&dense?[3]:[8],edge?"pop":dense?"soft":"tick",edge?"limit":"detent "+idx);}}
+  detIdx=idx;$("#detV").textContent=idx;}
+det.addEventListener("pointerdown",e=>{det.setPointerCapture(e.pointerId);detSet(e.clientX-det.getBoundingClientRect().left,true);});
+det.addEventListener("pointermove",e=>{if(det.hasPointerCapture(e.pointerId))detSet(e.clientX-det.getBoundingClientRect().left,true);});
+$$("#detN .chip").forEach(c=>c.onclick=()=>{$$("#detN .chip").forEach(x=>x.classList.toggle("on",x===c));detN=+c.dataset.n;detLayout();detSet(20,false);});
+// pull to refresh
+(()=>{const box=$("#ptr"),sh=$("#ptrS"),ind=$("#ptrI");let y0=null,armed=false;const TH=90;
+ box.addEventListener("pointerdown",e=>{box.setPointerCapture(e.pointerId);y0=e.clientY;armed=false;});
+ box.addEventListener("pointermove",e=>{if(y0===null)return;const dy=Math.max(0,e.clientY-y0),pull=Math.min(160,dy*.6);sh.style.transform=`translateY(${pull+36}px)`;
+   if(pull>=TH&&!armed){armed=true;play([14],"pop","threshold","activate");ind.textContent="release to refresh";}else if(pull<TH&&armed){armed=false;play([5],"soft","threshold","deactivate");ind.textContent="pull down";}});
+ const end=()=>{if(y0===null)return;y0=null;if(armed){ind.textContent="refreshing…";sh.style.transform="translateY(56px)";setTimeout(()=>{play(cat([12],G(90),[20]),"up","refreshed","success");sh.style.transform="";ind.textContent="pull down";sh.textContent="Inbox · up to date";},900);}else{sh.style.transform="";}armed=false;};
+ box.addEventListener("pointerup",end);box.addEventListener("pointercancel",end);sh.style.transform="translateY(36px)";sh.style.transition="transform .2s";})();
+// long press
+(()=>{const b=$("#hold"),pg=b.querySelector(".prog");let t0=0,raf=0,fired=false,lastStep=-1;
+ const tick=()=>{const p=Math.min(1,(performance.now()-t0)/550);pg.style.width=(p*100)+"%";const step=Math.floor(p*5);
+   if($("#holdBuild").checked&&step!==lastStep&&step<5&&step>0){lastStep=step;vib(pwm(10,.15+step*.15));}
+   if(p>=1&&!fired){fired=true;play([34],"thud","long press","LONG_PRESS");b.querySelector("span").textContent="Menu opened";return;}raf=requestAnimationFrame(tick);};
+ b.addEventListener("pointerdown",e=>{e.preventDefault();ac();t0=performance.now();fired=false;lastStep=0;raf=requestAnimationFrame(tick);});
+ const up=()=>{cancelAnimationFrame(raf);pg.style.width="0";setTimeout(()=>b.querySelector("span").textContent="Hold me",700);};b.addEventListener("pointerup",up);b.addEventListener("pointerleave",up);b.addEventListener("contextmenu",e=>e.preventDefault());})();
+// swipe to delete
+(()=>{const it=$("#swI"),box=$("#sw");let x0=null,arm=false;
+ it.addEventListener("pointerdown",e=>{it.setPointerCapture(e.pointerId);x0=e.clientX;arm=false;it.style.transition="none";});
+ it.addEventListener("pointermove",e=>{if(x0===null)return;const dx=Math.min(0,e.clientX-x0);it.style.transform=`translateX(${dx}px)`;const f=-dx/box.clientWidth;
+   if(f>.45&&!arm){arm=true;play([15],"pop","swipe","threshold");}else if(f<.45&&arm){arm=false;play([5],"soft","swipe","cancelled");}});
+ const end=()=>{if(x0===null)return;x0=null;it.style.transition="transform .25s";if(arm){it.style.transform="translateX(-110%)";play(cat([8],G(40),[28]),"whoosh","deleted","");setTimeout(()=>{it.style.transition="none";it.style.transform="translateX(0)";},900);}else it.style.transform="translateX(0)";arm=false;};
+ it.addEventListener("pointerup",end);it.addEventListener("pointercancel",end);})();
+// textures
+const TEX={glass:{step:1e9,p:[0]},sand:{step:6,p:[2],s:"grain"},cord:{step:18,p:[6],s:"soft"},bumps:{step:44,p:[16],s:"knock"},gravel:{step:()=>6+Math.random()*16,p:()=>[2+Math.random()*7|0],s:"grain"},grid:{grid:40,p:[10],s:"tick"}};
+let texK="sand";const tex=$("#tex");
+function drawTex(){if(!tex.offsetParent)return;const[x,w,h]=fit(tex);x.fillStyle=css("--soft");x.fillRect(0,0,w,h);x.fillStyle=css("--line");x.strokeStyle=css("--line");
+  if(texK==="sand")for(let i=0;i<w*h/60;i++)x.fillRect(Math.random()*w,Math.random()*h,1.5,1.5);
+  if(texK==="cord")for(let i=0;i<w;i+=18)x.fillRect(i,0,6,h);
+  if(texK==="bumps")for(let i=22;i<w;i+=44)for(let j=22;j<h;j+=44){x.beginPath();x.arc(i,j,9,0,7);x.fill();}
+  if(texK==="gravel")for(let i=0;i<w*h/350;i++){x.beginPath();x.arc(Math.random()*w,Math.random()*h,1+Math.random()*4,0,7);x.fill();}
+  if(texK==="grid"){for(let i=0;i<w;i+=40)x.fillRect(i,0,2,h);for(let j=0;j<h;j+=40)x.fillRect(0,j,w,2);}
+  if(texK==="glass"){x.fillStyle=css("--muted");x.font="13px system-ui";x.fillText("perfectly smooth: no ticks at all",14,24);}}
+$$("#texSel .chip").forEach(c=>c.onclick=()=>{$$("#texSel .chip").forEach(x=>x.classList.toggle("on",x===c));texK=c.dataset.x;drawTex();});
+(()=>{let last=null,acc=0,need=0,cell=null;
+ tex.addEventListener("pointerdown",e=>{tex.setPointerCapture(e.pointerId);ac();last=[e.offsetX,e.offsetY];acc=0;need=0;cell=null;});
+ tex.addEventListener("pointermove",e=>{if(!last)return;const T=TEX[texK],dx=e.offsetX-last[0],dy=e.offsetY-last[1];last=[e.offsetX,e.offsetY];
+  if(T.grid){const c=[Math.floor(e.offsetX/T.grid),Math.floor(e.offsetY/T.grid)].join();if(cell!==null&&c!==cell){vib(T.p);snd(T.s,0,.6);lastPat=T.p;scopeDraw("grid line","");}cell=c;return;}
+  acc+=Math.hypot(dx,dy);if(!need)need=typeof T.step==="function"?T.step():T.step;
+  if(acc>=need){acc=0;need=0;const p=typeof T.p==="function"?T.p():T.p;if(p[0]){vib(p);snd(T.s,0,.5);lastPat=p;scopeDraw(texK,"per distance");}}});
+ const end=()=>last=null;tex.addEventListener("pointerup",end);tex.addEventListener("pointercancel",end);})();
+
+/* ================================================= 5. KEYBOARD */
+let kbStyle="tokens";const out=$("#kbOut");
+const ROWS=["qwertyuiop","asdfghjkl","⌫zxcvbnm⏎"," "];
+ROWS.forEach(r=>{const row=document.createElement("div");row.className="kr";[...r].forEach(ch=>{const k=document.createElement("button");k.className="key"+(ch==="⌫"||ch==="⏎"?" w":"")+(ch===" "?" sp":"");k.textContent=ch===" "?"space":ch==="⏎"?"return":ch;
+  k.addEventListener("pointerdown",e=>{e.preventDefault();ac();const kind=ch===" "?"SPACEBAR":ch==="⏎"?"RETURN":ch==="⌫"?"DELETE":"STANDARD";
+   if(ch==="⌫")out.textContent=out.textContent.slice(0,-1);else if(ch==="⏎")out.textContent+=" ↵ ";else out.textContent+=ch;
+   const tok=TOK[3][1].find(t=>t[0]==="KEYPRESS_"+kind);
+   if(kbStyle==="tokens")play(tok[1],tok[2],"KEYPRESS_"+kind,"");else if(kbStyle==="same")play([8],"click","same click","");else if(kbStyle==="heavy")play([45],"thud","too strong","45 ms");});
+  row.appendChild(k);});$("#kb").appendChild(row);});
+$$("#kbStyle .chip").forEach(c=>c.onclick=()=>{$$("#kbStyle .chip").forEach(x=>x.classList.toggle("on",x===c));kbStyle=c.dataset.s;});
+
+/* ================================================= 6. COMBINE */
+const CH={tick:[8],click:[14],double:rep([12],2,70),thud:[45],buzz:[220],"ramp up":ramp(300,.15,1),"ramp down":ramp(300,1,.15),rumble:pwm(300,.4,30),none:[]};
+const CS={tick:"tick",click:"click",pop:"pop",thud:"thud",chime:"chime","sweep up":"sweepUp","sweep down":"sweepDown",error:"err",none:null};
+let cH="click",cS="click";
+function chips(el,obj,cur,set){el.innerHTML="";Object.keys(obj).forEach(k=>{const b=document.createElement("button");b.className="chip"+(k===cur?" on":"");b.textContent=k;b.onclick=()=>{set(k);chips(el,obj,k,set);play(obj===CH?CH[k]:CH[cH],obj===CS?CS[k]:CS[cS],cH+" + "+cS);};el.appendChild(b);});}
+chips($("#cH"),CH,cH,k=>cH=k);chips($("#cS"),CS,cS,k=>cS=k);
+$("#cPlay").onclick=()=>play(CH[cH],CS[cS],cH+" + "+cS,"");
+[["Matched","sharp tap + tick","tick","tick"],["Matched","heavy thud + thud","thud","thud"],["Matched","ramp + rising sweep","ramp up","sweep up"],
+ ["Mismatched","sharp tap + deep thud","tick","thud"],["Mismatched","long buzz + tick","buzz","tick"],["Mismatched","ramp up + falling sweep","ramp up","sweep down"]]
+ .forEach(([a,b,h,s])=>tile($("#cPairs"),{name:a,desc:b,pat:CH[h],sound:CS[s]}));
+$$("#ghost .chip").forEach(c=>c.onclick=()=>{$$("#ghost .chip").forEach(x=>x.classList.toggle("on",x===c));const g=+c.dataset.g;play(cat([12],G(g),[12]),null,"ghost haptic",g+" ms gap");});
+
+/* ================================================= 7. TIMING */
+let dMode="0",dBlind=null;
+$$("#dly .chip").forEach(c=>c.onclick=()=>{$$("#dly .chip").forEach(x=>x.classList.toggle("on",x===c));dMode=c.dataset.ms;$("#dRev").style.display=dMode==="blind"?"":"none";dBlind=null;$("#dLog").textContent=dMode==="blind"?"Every tap gets a random delay. Guess, then reveal.":"";});
+$("#dTap").addEventListener("pointerdown",e=>{e.preventDefault();ac();const ms=dMode==="blind"?[0,50,100,200][Math.random()*4|0]:+dMode;if(dMode==="blind"){dBlind=ms;$("#dLog").textContent="Tapped. Guess the delay…";}
+  setTimeout(()=>{vib([15]);snd("click");document.body.classList.remove("flash");void document.body.offsetWidth;document.body.classList.add("flash");},ms);
+  lastPat=[15];lastSnd=[ms];scopeDraw(dMode==="blind"?"blind tap":ms+" ms delay","",ms,ms);});
+$("#dRev").onclick=()=>$("#dLog").textContent=dBlind===null?"Tap first.":`That tap had ${dBlind} ms delay.`;
+$("#off").oninput=e=>{const v=+e.target.value;$("#offV").textContent=v;$("#offT").textContent=v===0?"together":v<0?"vibration first":"sound first";};
+$("#oTap").addEventListener("pointerdown",e=>{e.preventDefault();ac();const off=+$("#off").value,lat=$("#latComp").checked?outLat():0;
+  // off>0 => sound first by off ms; off<0 => vibration first
+  let hapD=Math.max(0,off)+lat,sndD=Math.max(0,-off);setTimeout(()=>vib([14]),hapD);snd("click",sndD);
+  lastPat=[14];lastSnd=[sndD+lat];scopeDraw("offset "+off+" ms",lat?"latency compensated":"",hapD,sndD+lat);$("#latV").textContent=Math.round(outLat());});
+
+/* ================================================= 8. COMPOSER */
+let steps=[{t:"p",ms:20,i:90,s:60},{t:"g",ms:90},{t:"p",ms:40,i:60,s:40}];
+const PRE={Heartbeat:[{t:"p",ms:30,i:100,s:30},{t:"g",ms:90},{t:"p",ms:18,i:60,s:30},{t:"g",ms:450}],
+ "Knock knock":[{t:"p",ms:18,i:100,s:50},{t:"g",ms:110},{t:"p",ms:18,i:100,s:50},{t:"g",ms:300}],
+ Success:[{t:"p",ms:12,i:60,s:70},{t:"g",ms:90},{t:"p",ms:22,i:100,s:60}],
+ Swell:[{t:"p",ms:60,i:20,s:30},{t:"p",ms:60,i:45,s:40},{t:"p",ms:60,i:75,s:50},{t:"p",ms:60,i:100,s:60},{t:"p",ms:60,i:55,s:50},{t:"p",ms:60,i:20,s:40}],
+ SOS:[...[1,2,3].flatMap(()=>[{t:"p",ms:80,i:100,s:50},{t:"g",ms:80}]),{t:"g",ms:160},...[1,2,3].flatMap(()=>[{t:"p",ms:240,i:100,s:50},{t:"g",ms:80}]),{t:"g",ms:160},...[1,2,3].flatMap(()=>[{t:"p",ms:80,i:100,s:50},{t:"g",ms:80}])],
+ Purr:[{t:"p",ms:400,i:30,s:20}]};
+Object.keys(PRE).forEach(k=>{const b=document.createElement("button");b.className="chip";b.textContent=k;b.onclick=()=>{steps=JSON.parse(JSON.stringify(PRE[k]));renderSteps();playComp();};$("#cmpPre").appendChild(b);});
+function compPattern(){const xs=[];steps.forEach(s=>{if(s.t==="g")xs.push(G(s.ms));else xs.push(pwm(s.ms,s.i/100,s.s<40?16:8));});return cat(...xs);}
+function renderSteps(){const el=$("#steps");el.innerHTML="";steps.forEach((s,ix)=>{const r=document.createElement("div");r.className="step "+(s.t==="p"?"p":"g");
+  r.innerHTML=s.t==="p"?`<span class="k">pulse</span><label class="f">ms<input type="number" min="1" max="2000" value="${s.ms}" data-k="ms"></label><button class="x" title="remove">×</button><label class="f">intensity <span class="val">${s.i}%</span><input type="range" min="10" max="100" step="5" value="${s.i}" data-k="i"></label><label class="f wide2">sharpness <span class="val">${s.s}%</span><input type="range" min="0" max="100" step="5" value="${s.s}" data-k="s"></label>`
+   :`<span class="k">gap</span><label class="f">ms<input type="number" min="1" max="3000" value="${s.ms}" data-k="ms"></label><button class="x" title="remove">×</button>`;
+  r.querySelectorAll("input").forEach(inp=>inp.oninput=()=>{const k=inp.dataset.k;s[k]=k==="s"?Math.max(0,+inp.value||0):Math.max(1,+inp.value||1);if(k!=="ms")inp.previousElementSibling.textContent=s[k]+"%";renderPrev();});
+  r.querySelectorAll("input[type=range]").forEach(inp=>inp.onchange=()=>playComp());
+  r.querySelector(".x").onclick=()=>{steps.splice(ix,1);renderSteps();};el.appendChild(r);});renderPrev();}
+function renderPrev(){const cv=$("#cmpPrev");if(!cv.offsetParent)return;const[x,w,h]=fit(cv);x.clearRect(0,0,w,h);const total=Math.max(200,steps.reduce((a,s)=>a+s.ms,0));let t=0;
+  steps.forEach(s=>{if(s.t==="p"){const bh=(h-20)*s.i/100;x.fillStyle=css("--touch");x.globalAlpha=.25+.75*s.i/100;x.fillRect(t/total*w,h-10-bh,Math.max(2,s.ms/total*w-1),bh);x.globalAlpha=1;}t+=s.ms;});
+  x.fillStyle=css("--muted");x.font="11px system-ui";x.fillText(total+" ms",w-50,12);
+  const p=compPattern();const amps=[];const tim=[];steps.forEach(s=>{tim.push(s.ms);amps.push(s.t==="p"?Math.round(s.i/100*255):0);});
+  codeTabs($("#exTabs"),$("#exCode"),{
+   Web:webCode(p),
+   "Android amplitude":`// real amplitude where hasAmplitudeControl() == true\nval timings = longArrayOf(${fmt(tim)})\nval amps = intArrayOf(${fmt(amps)})\nif (vibrator.hasAmplitudeControl())\n  vibrator.vibrate(VibrationEffect.createWaveform(timings, amps, ${$("#loop").checked?0:-1}))\nelse\n  vibrator.vibrate(VibrationEffect.createWaveform(timings, ${$("#loop").checked?0:-1}))  // on/off`,
+   "iOS AHAP":ahapFromSteps(steps),
+   "React Native":rnCode(p)},true);
+  $("#exHint").textContent=`${steps.filter(s=>s.t==="p").length} pulses · web array has ${p.length} entries (PWM expands soft pulses).`;}
+$("#addP").onclick=()=>{steps.push({t:"p",ms:20,i:80,s:50});renderSteps();};$("#addG").onclick=()=>{steps.push({t:"g",ms:80});renderSteps();};$("#clr").onclick=()=>{steps=[];renderSteps();};$("#loop").onchange=renderPrev;
+let loopT=null;
+function playComp(){clearTimeout(loopT);const p=compPattern();if(!p.length)return;const sn=$("#cmpSnd").value;play(p,null,"composer",dur(p)+" ms");
+  if(sn&&S.snd){let t=0;steps.forEach(s=>{if(s.t==="p")snd(sn,t,.4+.6*s.i/100);t+=s.ms;});lastSnd=[];let tt=0;steps.forEach(s=>{if(s.t==="p")lastSnd.push(tt);tt+=s.ms;});drawPattern(sc,p,{sndAt:lastSnd});}
+  if($("#loop").checked)loopT=setTimeout(playComp,dur(p)+250);}
+$("#cmpPlay").onclick=()=>{if(loopT&&$("#loop").checked&&$("#cmpPlay").dataset.on){clearTimeout(loopT);loopT=null;delete $("#cmpPlay").dataset.on;$("#cmpPlay").textContent="Play";navigator.vibrate&&navigator.vibrate(0);return;}
+  if($("#loop").checked){$("#cmpPlay").dataset.on=1;$("#cmpPlay").textContent="Stop";}ac();playComp();};
+
+/* ================================================= 9. RHYTHM */
+let meter=4,rMode="both",rTimer=null,beat=0;
+function beatsUI(){const el=$("#beats");el.innerHTML="";for(let i=0;i<meter;i++){const d=document.createElement("div");d.style.cssText=`width:${i?26:34}px;height:${i?26:34}px;border-radius:50%;background:var(--soft);transition:background .08s`;el.appendChild(d);}}beatsUI();
+$("#bpm").oninput=e=>{$("#bpmV").textContent=e.target.value;if(rTimer){stopR();startR();}};
+$$("#meter .chip").forEach(c=>c.onclick=()=>{$$("#meter .chip").forEach(x=>x.classList.toggle("on",x===c));meter=+c.dataset.m;beat=0;beatsUI();});
+$$("#rMode .chip").forEach(c=>c.onclick=()=>{$$("#rMode .chip").forEach(x=>x.classList.toggle("on",x===c));rMode=c.dataset.r;});
+function startR(){const ms=60000/+$("#bpm").value;const step=()=>{const acc=beat%meter===0;const dots=$$("#beats div");dots.forEach((d,i)=>d.style.background=i===beat%meter?(acc?"var(--touch)":"var(--ink)"):"var(--soft)");
+  if(rMode!=="snd")vib(acc?[35]:[10]);if(rMode!=="hap")snd(acc?"knock":"tick",0,acc?1:.7);lastPat=acc?[35]:[10];lastSnd=rMode!=="hap"?[0]:[];scopeDraw(acc?"accent":"beat",$("#bpm").value+" BPM");beat++;};
+  step();rTimer=setInterval(step,ms);$("#rGo").textContent="Stop";}
+function stopR(){clearInterval(rTimer);rTimer=null;$("#rGo").textContent="Start";}
+$("#rGo").onclick=()=>{ac();rTimer?stopR():startR();};
+
+/* ================================================= 10. DEVICE */
+function devInfo(){const rows=[["Vibration API",vibOK?"yes":"no"],["Touch points",navigator.maxTouchPoints||0],["Audio output latency",AC?Math.round(outLat())+" ms":"tap anything first"],["Audio sample rate",AC?AC.sampleRate+" Hz":"–"],["Reduced motion",matchMedia("(prefers-reduced-motion: reduce)").matches?"on":"off"],["Platform",(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||"–"]];
+  $("#dev").innerHTML=rows.map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join("");}
+devInfo();document.addEventListener("pointerdown",()=>setTimeout(devInfo,300),{once:false,passive:true});
+[1,2,3,5,8,12,20,30].forEach(m=>{const b=document.createElement("button");b.className="chip";b.textContent=m+" ms";b.onclick=()=>play([m],null,m+" ms pulse","");$("#minP").appendChild(b);});
+$("#mr1").onclick=()=>play([300],null,"300 ms on","");$("#mr2").onclick=()=>play(rep([5],30,5),null,"30 × 5 ms","same span");
+
+/* init */
+detLayout();detSet(20,false);requestAnimationFrame(()=>{drawPad();drawTex();renderSteps();scopeDraw("ready","tap something");});
 </script>
 </body>
 </html>
